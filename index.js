@@ -1,3 +1,5 @@
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
 import express from "express";
 
 const app = express();
@@ -5,7 +7,6 @@ app.use(express.json());
 
 const BOT_TOKEN = process.env.MAX_BOT_TOKEN;
 const ADMIN_ID = process.env.ADMIN_ID;
-const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 
 if (!BOT_TOKEN) {
   throw new Error("MAX_BOT_TOKEN is not set");
@@ -20,18 +21,9 @@ app.get("/", (req, res) => {
 });
 
 app.post("/webhook", async (req, res) => {
-  // Сразу отвечаем MAX, чтобы webhook не ждал
   res.sendStatus(200);
 
   try {
-    if (
-      WEBHOOK_SECRET &&
-      req.get("X-Max-Bot-Api-Secret") !== WEBHOOK_SECRET
-    ) {
-      console.error("Wrong webhook secret");
-      return;
-    }
-
     const update = req.body;
 
     if (update.update_type !== "message_created") {
@@ -39,8 +31,10 @@ app.post("/webhook", async (req, res) => {
     }
 
     const message = update.message;
+    const mid = message?.body?.mid;
 
-    if (!message?.body?.mid) {
+    if (!mid) {
+      console.log("No message id in update");
       return;
     }
 
@@ -57,19 +51,21 @@ app.post("/webhook", async (req, res) => {
           attachments: null,
           link: {
             type: "forward",
-            mid: message.body.mid
+            mid: mid
           }
         })
       }
     );
 
+    const result = await response.text();
+
     if (!response.ok) {
-      const error = await response.text();
-      console.error("MAX API error:", response.status, error);
+      console.error("MAX API error:", response.status, result);
       return;
     }
 
-    console.log("Message forwarded:", message.body.mid);
+    console.log("Message forwarded successfully:", mid);
+    console.log(result);
   } catch (error) {
     console.error("Webhook error:", error);
   }
