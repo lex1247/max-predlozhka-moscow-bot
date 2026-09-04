@@ -1,0 +1,13 @@
+{
+  "name": "max-predlozhka-moscow-bot",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@maxhub/max-bot-api": "^0.2.1",
+    "express": "^5.1.0"
+  }
+}
